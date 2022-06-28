@@ -39,7 +39,7 @@ public class Config {
 	public static boolean sql_getAddresses    = true;
 	public static boolean sql_updateAddresses = false;
 	public static int     sql_updateTime      = 1000*10;// In milliseconds, lazy SQL
-	public static String  sql_key             = "I can do what I want. Ron";
+	public static String  sql_key             = "";
 	
 	/* SQL custom */
 	public static String  sql_address         = "";
