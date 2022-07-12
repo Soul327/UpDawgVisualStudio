@@ -42,15 +42,15 @@ public class Config {
 	public static String  sql_key             = "";
 	
 	/* SQL custom */
-	public static String  sql_address         = "";
-	public static String  sql_username        = "";
-	public static String  sql_password        = "";
-	public static String  sql_database        = "";
+	public static String  sql_address         = "162.144.12.171";
+	public static String  sql_username        = "everying_idiot";
+	public static String  sql_password        = "password";
+	public static String  sql_database        = "everying_updawg";
 //	public static String  sql_groupID         = "";// Removed as the groups should be a
 	public static ArrayList<String> groups = new ArrayList<String>();
 	
 	public static void init() {
-		groups.add("BISD");
+		groups.add("Testing");
 		// Change location of config file if not on windows
 		if(!GetSystemInfo.isWindows())
 			configFile = new File("UpDawg.config\n");
@@ -98,8 +98,6 @@ public class Config {
 				if(line.startsWith(temp = "ljs_enable "  )) ljs_enable   = line.contains("TRUE") || line.contains("true");
 			}
 			scanner.close();
-			
-			if(!sql_custom) Post.getSQLInfo();
 		} catch (Exception e) { e.printStackTrace(); }
 	}
 	

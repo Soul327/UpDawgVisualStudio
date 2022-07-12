@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import Misc.SDL;
 import Socket.SocketMisc;
 
-/**LJS - Local Java Server
+/**
+ * LJS - Local Java Server
  * A local server stared to collect information from sensors, IE. piData's information
+ * 
  * @author Walter Ozmore
  */
 public class LJS extends Thread {

@@ -97,18 +97,6 @@ public class WindowClient implements SimpleWindowEvent {
 					Port port = a.ports.get(z);
 					infoMenuList.add( String.format("%-10s%-6s%s", port.number+"/"+port.conType, port.state, port.service) );
 				}
-				
-				// Write
-				if(a.lastPingTime != null || a.lastTempCheck != null) {
-					infoMenuList.add("");
-					
-					if(a.lastPingTime != null) infoMenuList.add("Last Ping Time: " + Config.dtf.format( a.lastPingTime ));
-					if(a.lastTempCheck != null) {
-						infoMenuList.add("");
-						infoMenuList.add("Temp: "+a.lastTemp+" Humidity:"+a.lastHumidity);
-						infoMenuList.add("Last Temp Time: " + Config.dtf.format( a.lastTempCheck ));
-					}
-				}
 			}
 	}
 	

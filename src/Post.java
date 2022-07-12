@@ -10,37 +10,89 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Post {
-	
-	public static void updateAddress(Address address) {
-		final String link = "https://www.everyoneandeverything.org/UpDawg/res/Java/UpdateAddress";
+
+	final static String equals = "<eql>";
+	final static String separator = "<com>";
+	final static String lineSeparator = "<br>";
+	public static void update(Address address) {
+		ArrayList<Address> addresses = new ArrayList<>();
+		addresses.add(address);
+		update( addresses );
+	}
+	public static void update(ArrayList<Address> addresses) {
+		UpDawgLauncher.log("Updating addresses");
+		// Skip if there are no addresses
+		if(addresses == null || addresses.size() <= 0) return;
+
+		ArrayList<Map<String, String>> list = new ArrayList<Map<String, String>>();
+		// List of addresses
+		for(int x = 0;x < addresses.size(); x++) {
+			Address address = addresses.get(x);
+			
+			// if(address.time > 0) continue;
+
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("uID", address.uid + "");
+			map.put("Stat", address.status + "");
+			map.put("UpdateTime", address.time + "");
+			list.add(map);
+		}
+
+		// Create sendString
+		String str = getSendStr(list);
+		if(str == null) return;
+
+		String link = "https://www.everyoneandeverything.org/UpDawg/res/Java/UpdateAddresses.php";
+		Map<String, String> args = new HashMap<String, String>();
+		args.put("version", UpDawgLauncher.version);
+		args.put("q", str);
+		ArrayList<String> re = post(link, args);
+		// Print out output from post
+		for(String r:re)
+			System.out.println( r );
+	}
+
+	public static void getAddresses() {
+		UpDawgLauncher.log("Loading addresses from server\n");
+
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("key", Config.sql_key);
-		args.put("IPID", ""+address.uid );
-		args.put("pingingAddress", address.pingingAddress );
-		args.put("address", address.address );
-		args.put("hostname", address.hostName );
-		args.put("nickname", address.nickname );
-		args.put("stat", ""+address.status );
-		post(link, args);
+		String link = "https://www.everyoneandeverything.org/UpDawg/res/Ajax/GetAddresses.php";
+		ArrayList<String> postOutput = post(link, args);
+
+		// When there is no post output skip this function
+		if(postOutput == null || postOutput.size() == 0) return;
+		
+		ArrayList<Map<String, String>> output = readSendStr( postOutput.get(0) );
+
+		UpDawgLauncher.addresses = new ArrayList<Address>();
+
+		for(int x=0;x<output.size();x++) {
+			Map<String, String> map = output.get(x);
+			Address address = new Address();
+			if(map.containsKey("uID")) {
+				try {
+					address.uid = Integer.parseInt(map.get("uID"));
+				} catch(NumberFormatException e) {
+					UpDawgLauncher.log("Number format exception Post.getAddresses\n"+map.get("uID")+"\n");
+				}
+			} else {
+				// No uID found
+				continue;
+			}
+			if(map.containsKey("NickName")) address.nickname = map.get("NickName");
+			if(map.containsKey("PingingAddress")) address.pingingAddress = map.get("PingingAddress");
+
+			UpDawgLauncher.addresses.add( address );
+		}
 	}
 	
 	/**
-	 * Queries
+	 * Get the data from a URL by sending data via post and returning the results
+	 * 
+	 * @param args Auguments to be sent as post data
+	 * @return arraylist<String> of the webpage
 	 */
-	public static void getSQLInfo() {
-		final String link = "https://www.everyoneandeverything.org/UpDawg/res/Java/GetSQLInfo";
-		Map<String, String> args = new HashMap<String, String>();
-		args.put("key", Config.sql_key);
-		String re = post(link, args).get(0);
-		re = re.replace("<br>", "");
-		String[] list = re.split("<com>");
-		
-		Config.sql_username = list[0].split("<eql>")[1];
-		Config.sql_password = list[1].split("<eql>")[1];
-		Config.sql_address = list[2].split("<eql>")[1];
-		Config.sql_database = list[3].split("<eql>")[1];
-	}
-	
 	public static ArrayList<String> post(String link, Map<String, String> args) {
 		ArrayList<String> reList = new ArrayList<String>();
 		try {
@@ -62,16 +114,51 @@ public class Post {
 			BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
 			String line;
 			while((line = in.readLine()) != null) {
-//				System.out.println( line );// Prints out website
 				reList.add( line );
 			}
 			in.close();
 			
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			UpDawgLauncher.log(e.getMessage());
+			return null;
 		} catch (IOException e) {
-			e.printStackTrace();
+			UpDawgLauncher.log(e.getMessage());
+			return null;
 		}
 		return reList;
+	}
+
+	public static ArrayList<Map<String, String>> readSendStr(String str) {
+		ArrayList<Map<String, String>> re = new ArrayList<Map<String, String>>();
+
+		String[] lines = str.split( lineSeparator );
+		for(int x=0;x<lines.length;x++) {
+			Map<String, String> map = new HashMap<String, String>();
+			String[] variables = lines[x].split( separator );
+			for(int y=0;y<variables.length;y++) {
+				String[] variable = variables[y].split( equals );
+				map.put(variable[0], ((variable.length == 2)?variable[1]:null));
+			}
+			re.add( map );
+		}
+
+		return re;
+	}
+
+	public static String getSendStr(ArrayList<Map<String, String>> args) {
+		if(args.size() == 0) return null;
+
+		String sendString = "";
+		for(int x=0;x<args.size();x++) {
+			for (Map.Entry<String,String> entry : args.get(x).entrySet())
+				sendString += entry.getKey() + equals + entry.getValue() + separator;
+			// Remove last separator
+			sendString = sendString.substring(0, sendString.length() - separator.length());
+			sendString += lineSeparator;
+		}
+
+		// Remove last line break
+		sendString = sendString.substring(0, sendString.length() - lineSeparator.length());
+		return sendString;
 	}
 }
