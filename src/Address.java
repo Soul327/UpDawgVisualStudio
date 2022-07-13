@@ -38,6 +38,11 @@ public class Address {
 		this.uid = Integer.parseInt( uid );
 	}
 	
+
+	/**
+	 * Adds a port to the address using the String 
+	 * @param str
+	 */
 	public void addPort(String str) {
 		Port port = new Port(str);
 		for(int z=0;z<ports.size();z++)
@@ -49,26 +54,39 @@ public class Address {
 		updateSQL = true;
 	}
 	
+	/**
+	 * Changes the address's status to warning if the address's status is already warning it will set it to down
+	 */
 	public void setDown() {
+		// Log the change if it changes
 		if(status != 0 && status != 1) UpDawgLauncher.log(nickname+((status == 1)?" missed a ping\n":" is down\n"));
 		// Set status to warning, if it already at warning set it to down
 		status = (status > 0)?status - 1:0;
 		setTime();
-
 	}
+
+	/**
+	 * Changes the address's status to up
+	 */
 	public void setUp() {
+		// Log the change if it changes
 		if(status != 2) UpDawgLauncher.log(nickname+" is up.\n");
 		// Set status to up
 		status = 2;
 		setTime();
-
 	}
 
+	/**
+	 * Sets the addresses's time to the current time
+	 */
 	public void setTime() {
 		Date date = new Date();
 		time = date.getTime() / 100;
 	}
 
+	/**
+	 * Pings the given IP address via java's InetAddress.isReachable and then calls either setUp() or setDown()
+	 */
 	public void ping() {
 		InetAddress inet;
 		try {
