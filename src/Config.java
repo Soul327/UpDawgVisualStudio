@@ -42,6 +42,9 @@ public class Config {
 	
 	public static ArrayList<String> groups = new ArrayList<String>();
 	
+	/**
+	 * Loads the config file
+	 */
 	public static void init() {
 		// Move old config file as the old config file had an issue with .gitignore
 		File oldConfig = new File("UpDawg.config");
@@ -88,6 +91,9 @@ public class Config {
 		} catch (Exception e) { e.printStackTrace(); }
 	}
 	
+	/**
+	 * Write to the config file to fix formating and such
+	 */
 	public static void writeConfigFile() {
 		try {
 			FileWriter mw = new FileWriter( configFile );

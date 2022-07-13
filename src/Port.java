@@ -1,3 +1,6 @@
+/**
+ * A simple class just to store information obtained from nmap scans
+ */
 public class Port {
 	public int number;
 	public String conType = "", service = "", state = "";

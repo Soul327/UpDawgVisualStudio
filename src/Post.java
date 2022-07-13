@@ -10,16 +10,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Post {
-
+	// Arguments for spliting and creating post strings
 	final static String equals = "<eql>";
 	final static String separator = "<com>";
 	final static String lineSeparator = "<br>";
 
+	/**
+	 * Sends a post request to the server to update the given address by creating an array of the address and passing it to update(ArrayList<Address> addresses)
+	 * 
+	 * @param address
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static void update(Address address) {
 		ArrayList<Address> addresses = new ArrayList<>();
 		addresses.add(address);
 		update( addresses );
 	}
+
+	/**
+	 * Sends a post request to the server to update the given addresses
+	 * 
+	 * @param addresses ArrayList of addresses
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static void update(ArrayList<Address> addresses) {
 		// Skip if there are no addresses
 		if(addresses == null || addresses.size() <= 0) return;
@@ -55,6 +70,11 @@ public class Post {
 				System.out.println( r );
 	}
 
+	/**
+	 * Sends a post request to the server that returns a long string that is then parced by readSendStr(String str). Then it checks each new address with each old addresses and combinds them allowing without deleting the old address, only updating their information.
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static void getAddresses() {
 		UpDawgLauncher.log("Loading addresses from server\n");
 
@@ -105,6 +125,8 @@ public class Post {
 	 * 
 	 * @param args Auguments to be sent as post data
 	 * @return arraylist<String> of the webpage
+	 * 
+	 * @author Walter Ozmore
 	 */
 	public static ArrayList<String> post(String link, Map<String, String> args) {
 		ArrayList<String> reList = new ArrayList<String>();
@@ -141,6 +163,14 @@ public class Post {
 		return reList;
 	}
 
+	/**
+	 * Parses the String in to an ArrayList<Map<String, String>> using {lineSeparator, separator, equals} strings
+	 * 
+	 * @param str Inputed line
+	 * @return ArrayList<Map<String, String>> of all variables
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static ArrayList<Map<String, String>> readSendStr(String str) {
 		ArrayList<Map<String, String>> re = new ArrayList<Map<String, String>>();
 
@@ -158,6 +188,14 @@ public class Post {
 		return re;
 	}
 
+	/**
+	 * Converts the arguments in to a string to send as a post request
+	 * 
+	 * @param args Arguments to map to send as a post request
+	 * @return String to send as a post request
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static String getSendStr(ArrayList<Map<String, String>> args) {
 		if(args.size() == 0) return null;
 

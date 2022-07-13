@@ -2,20 +2,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import Misc.SDL;
 import Misc.SimpleWindow;
 
 public class UpDawgLauncher {
 	static boolean run = true;
-	public static String version = "Version 2.2.8";
+	public static String version = "Version 2.2.9";
 	public static SimpleWindow window;
 	
 	public static ArrayList<Address> addresses = new ArrayList<Address>();
@@ -41,21 +37,33 @@ public class UpDawgLauncher {
 		}
 
 		// run();
-		new Thread(() -> { run_update(); }).start();
-		while(run) {
-			tick();
-		}
+		run_update();
+		while(run) tick();
 	}
 
+	/**
+	 * Sends a post update request periodically, this is put on a seprate thread
+	 * 
+	 * @author Walter Ozmore
+	 */
 	static void run_update() {
-		while(true) {
-			ArrayList<Address> updateList = addressesToUpdate;
-			addressesToUpdate = new ArrayList<Address>();
-			Post.update( updateList );
-			SDL.sleep(2_000);
-		}
+		(new Thread() {
+			public void run() {
+				while(true) {
+					ArrayList<Address> updateList = addressesToUpdate;
+					addressesToUpdate = new ArrayList<Address>();
+					Post.update( updateList );
+					SDL.sleep(2_000);
+				}
+			}
+		}).start();
 	}
 
+	/**
+	 * Uses a post request get addresses from the server, then pings all the addresses from the server sequentially
+	 * 
+	 * @author Walter Ozmore 
+	 */
 	static void tick() {
 		// Grab addresses
 		Post.getAddresses();
@@ -69,6 +77,13 @@ public class UpDawgLauncher {
 		}
 	}
 	
+	/**
+	 * Logs the given message to the console and a file with the name of the date and the number of log
+	 * 
+	 * @param message
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static void log(String message) {
 		if(!message.endsWith("\n")) message += "\n";
 
@@ -101,21 +116,16 @@ public class UpDawgLauncher {
 		}
 	}
 
+	/**
+	 * Creates a shutdown hook that will run when the program closes though either the user closing the program or when a fatal error is reached
+	 * 
+	 * @author Walter Ozmore
+	 */
 	public static void shutdownHook() {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 				UpDawgLauncher.log("Shutting down");
 			}
 		}, "Shutdown-thread"));
-	}
-
-	public static String printDate(long time) {
-		// Print out date
-		long millis = time * 1000;
-		Date date = new Date(millis);
-		SimpleDateFormat sdf = new SimpleDateFormat("EEEE,MMMM d,yyyy h:mm,a", Locale.ENGLISH);
-		sdf.setTimeZone(TimeZone.getTimeZone("CDT"));
-		String formattedDate = sdf.format(date);
-		return formattedDate;
 	}
 }
