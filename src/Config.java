@@ -12,7 +12,7 @@ public class Config {
 	static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ssa MM/dd/YYYY");
 	
 	// General
-	public static File    configFile  = new File("UpDawg.config");
+	public static File    configFile  = new File("settings.txt");
 	public static File    currentLogFile = null;
 	
 	//Ping Information
@@ -34,23 +34,19 @@ public class Config {
 	
 	// SQL
 	public static boolean sql_enable          = true;
-	public static boolean sql_custom          = false;
 	public static boolean sql_lazy            = false;
 	public static boolean sql_getAddresses    = true;
 	public static boolean sql_updateAddresses = false;
 	public static int     sql_updateTime      = 1000*10;// In milliseconds, lazy SQL
 	public static String  sql_key             = "";
 	
-	/* SQL custom */
-	public static String  sql_address         = "162.144.12.171";
-	public static String  sql_username        = "everying_idiot";
-	public static String  sql_password        = "password";
-	public static String  sql_database        = "everying_updawg";
-//	public static String  sql_groupID         = "";// Removed as the groups should be a
 	public static ArrayList<String> groups = new ArrayList<String>();
 	
 	public static void init() {
-		groups.add("Testing");
+		// Move old config file as the old config file had an issue with .gitignore
+		File oldConfig = new File("UpDawg.config");
+		if( oldConfig.exists() ) oldConfig.renameTo( configFile );
+
 		// Change location of config file if not on windows
 		if(!GetSystemInfo.isWindows())
 			configFile = new File("UpDawg.config\n");
@@ -79,20 +75,11 @@ public class Config {
 				if(line.startsWith(temp = "sql_lazy"            )) sql_lazy            = line.contains("TRUE") || line.contains("true");
 				if(line.startsWith(temp = "sql_getAddresses"    )) sql_getAddresses    = line.contains("TRUE") || line.contains("true");
 				if(line.startsWith(temp = "sql_updateAddresses" )) sql_updateAddresses = line.contains("TRUE") || line.contains("true");
-				if(line.startsWith(temp = "sql_updateTime "     )) sql_updateTime      = Integer.parseInt(line.replaceAll(temp, ""));
 				if(line.startsWith(temp = "sql_key "            )) sql_key             = line.replaceAll(temp, "");
-				
-				if(sql_custom) {
-					if(line.startsWith(temp = "sql_address "        )) sql_address         = line.replaceAll(temp, "");
-					if(line.startsWith(temp = "sql_username "       )) sql_username        = line.replaceAll(temp, "");
-					if(line.startsWith(temp = "sql_password "       )) sql_password        = line.replaceAll(temp, "");
-					if(line.startsWith(temp = "sql_database "       )) sql_database        = line.replaceAll(temp, "");
-				}
 				
 				// Ping information
 				if(line.startsWith(temp = "pingTimeOutTime "    )) pingTimeOutTime     = Integer.parseInt( line.replaceAll(temp, "") );
 				if(line.startsWith(temp = "nmap "               )) nmap                = line.contains("TRUE") || line.contains("true");
-				if(line.startsWith(temp = "pingingThreadCount " )) threadCount         = Integer.parseInt( line.substring("PingingThreadCount".length()+1) );
 				
 				// Local Java Server
 				if(line.startsWith(temp = "ljs_enable "  )) ljs_enable   = line.contains("TRUE") || line.contains("true");
@@ -108,25 +95,17 @@ public class Config {
 			mw.write("SWfontSize "+swFontSize+"\n");
 			mw.write("localWindowClient "+localWindowClient+"\n");
 			mw.write("\n");
-			mw.write("# SQL\n");
+			mw.write("# Database\n");
 			mw.write("sql_enable "+sql_enable+"\n");
 			mw.write("sql_lazy "+sql_lazy+"\n");
 			mw.write("sql_getAddresses "+sql_getAddresses+"\n");
 			mw.write("sql_updateAddresses "+sql_updateAddresses+"\n");
-			mw.write("sql_updateTime "+sql_updateTime+"\n");
 			mw.write("sql_key "+sql_key+"\n");
-			
-			mw.write("\n# SQL custom connection\n");
-			mw.write("sql_custom "+sql_custom+"\n");
-			mw.write("sql_address "+((sql_custom)?sql_address:"")+"\n");
-			mw.write("sql_database "+((sql_custom)?sql_database:"")+"\n");
-			mw.write("sql_username "+((sql_custom)?sql_username:"")+"\n");
-			mw.write("sql_password "+((sql_custom)?sql_password:"")+"\n");
+
 			mw.write("\n");
 			mw.write("# Ping Information\n");
 			mw.write("nmap "+nmap+"\n");
 			mw.write("pingTimeOutTime "+pingTimeOutTime+"\n");
-			mw.write("pingingThreadCount "+threadCount+"\n");
 			mw.write("\n");
 			mw.write("# Local Java Server\n");
 			mw.write("ljs_enable "+ljs_enable+"\n");

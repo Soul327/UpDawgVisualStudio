@@ -15,7 +15,7 @@ import Misc.SimpleWindow;
 
 public class UpDawgLauncher {
 	static boolean run = true;
-	public static String version = "Version 2.2.7";
+	public static String version = "Version 2.2.8";
 	public static SimpleWindow window;
 	
 	public static ArrayList<Address> addresses = new ArrayList<Address>();
@@ -40,9 +40,6 @@ public class UpDawgLauncher {
 			ljs.start(); // Waits for connections
 		}
 
-		// Grab addresses
-		Post.getAddresses();
-
 		// run();
 		new Thread(() -> { run_update(); }).start();
 		while(run) {
@@ -60,13 +57,15 @@ public class UpDawgLauncher {
 	}
 
 	static void tick() {
+		// Grab addresses
+		Post.getAddresses();
+
 		// Ping every address
 		for(int x=0;x<UpDawgLauncher.addresses.size();x++) {
 			Address address = UpDawgLauncher.addresses.get(x);
 			address.ping();
-			if( !addressesToUpdate.contains(address))
-				addressesToUpdate.add(address);
-			SDL.sleep(500);
+			if( !addressesToUpdate.contains(address)) addressesToUpdate.add(address);
+			// SDL.sleep(500);
 		}
 	}
 	

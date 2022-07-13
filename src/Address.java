@@ -50,18 +50,18 @@ public class Address {
 	}
 	
 	public void setDown() {
+		if(status != 0 && status != 1) UpDawgLauncher.log(nickname+((status == 1)?" missed a ping\n":" is down\n"));
 		// Set status to warning, if it already at warning set it to down
 		status = (status > 0)?status - 1:0;
 		setTime();
 
-		UpDawgLauncher.log(nickname+((status == 1)?" missed a ping\n":" is down\n"));
 	}
 	public void setUp() {
+		if(status != 2) UpDawgLauncher.log(nickname+" is up.\n");
 		// Set status to up
 		status = 2;
 		setTime();
 
-		UpDawgLauncher.log(nickname+" is up.\n");
 	}
 
 	public void setTime() {

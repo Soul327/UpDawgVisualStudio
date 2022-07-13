@@ -14,15 +14,17 @@ public class Post {
 	final static String equals = "<eql>";
 	final static String separator = "<com>";
 	final static String lineSeparator = "<br>";
+
 	public static void update(Address address) {
 		ArrayList<Address> addresses = new ArrayList<>();
 		addresses.add(address);
 		update( addresses );
 	}
 	public static void update(ArrayList<Address> addresses) {
-		UpDawgLauncher.log("Updating addresses");
 		// Skip if there are no addresses
 		if(addresses == null || addresses.size() <= 0) return;
+
+		UpDawgLauncher.log("Updating " + addresses.size() + " addresses");
 
 		ArrayList<Map<String, String>> list = new ArrayList<Map<String, String>>();
 		// List of addresses
@@ -48,8 +50,9 @@ public class Post {
 		args.put("q", str);
 		ArrayList<String> re = post(link, args);
 		// Print out output from post
-		for(String r:re)
-			System.out.println( r );
+		if(re != null)
+			for(String r:re)
+				System.out.println( r );
 	}
 
 	public static void getAddresses() {
@@ -65,7 +68,7 @@ public class Post {
 		
 		ArrayList<Map<String, String>> output = readSendStr( postOutput.get(0) );
 
-		UpDawgLauncher.addresses = new ArrayList<Address>();
+		ArrayList<Address> newAddresses = new ArrayList<Address>();
 
 		for(int x=0;x<output.size();x++) {
 			Map<String, String> map = output.get(x);
@@ -73,6 +76,13 @@ public class Post {
 			if(map.containsKey("uID")) {
 				try {
 					address.uid = Integer.parseInt(map.get("uID"));
+					
+					// Check if the address already exists
+					for(int y=0;y<UpDawgLauncher.addresses.size();y++) {
+						if(UpDawgLauncher.addresses.get(y).uid == address.uid)
+							address = UpDawgLauncher.addresses.get(y);
+					}
+
 				} catch(NumberFormatException e) {
 					UpDawgLauncher.log("Number format exception Post.getAddresses\n"+map.get("uID")+"\n");
 				}
@@ -83,8 +93,11 @@ public class Post {
 			if(map.containsKey("NickName")) address.nickname = map.get("NickName");
 			if(map.containsKey("PingingAddress")) address.pingingAddress = map.get("PingingAddress");
 
-			UpDawgLauncher.addresses.add( address );
+
+			newAddresses.add( address );
 		}
+
+		UpDawgLauncher.addresses = newAddresses;
 	}
 	
 	/**
