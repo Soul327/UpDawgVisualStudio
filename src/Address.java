@@ -63,6 +63,7 @@ public class Address {
 		// Set status to warning, if it already at warning set it to down
 		status = (status > 0)?status - 1:0;
 		setTime();
+		UpDawgLauncher.addressesToUpdate.add( this );
 	}
 
 	/**
@@ -74,6 +75,7 @@ public class Address {
 		// Set status to up
 		status = 2;
 		setTime();
+		UpDawgLauncher.addressesToUpdate.add( this );
 	}
 
 	/**

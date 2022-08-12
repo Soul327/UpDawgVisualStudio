@@ -3,9 +3,14 @@ import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.JOptionPane;
+
 import Events.SimpleWindowEvent;
 import Misc.KeyManager;
 import Misc.MouseManager;
+import Misc.SDL;
 import Misc.SimpleWindow;
 import Rendering.Graphics;
 
@@ -19,11 +24,14 @@ public class WindowClient implements SimpleWindowEvent {
 		window.width = 1005;
 		window.height = 645;
 		window.name = "UpDawg "+UpDawgLauncher.version;
+		window.startOpen = false;
 		window.start();
 	}
 	
 	int longestAddress = 0;
 	public void tar(Graphics g) {
+		// Set data
+
 		// Quick change font size
 		if(KeyManager.keyRelease(KeyEvent.VK_UP)) Config.swFontSize++;
 		if(KeyManager.keyRelease(KeyEvent.VK_DOWN)) Config.swFontSize--;
@@ -87,6 +95,9 @@ public class WindowClient implements SimpleWindowEvent {
 				infoMenuList.add("Hostname: "+a.hostName);
 				infoMenuList.add("Nickname: "+a.nickname);
 				infoMenuList.add("Pinging Address: "+a.pingingAddress);
+
+				infoMenuList.add("Temp: "+a.lastTemp);
+				infoMenuList.add("Hum: "+a.lastHumidity);
 				
 				// Write ports out
 				for(int z=0;z<a.ports.size();z++) {
@@ -120,5 +131,57 @@ public class WindowClient implements SimpleWindowEvent {
 			g.drawOutlinedString(infoMenuList.get(z), window.width-width+5, g.fontSize*(1+z)-g.fontSize*.2);
 		
 		infoMenuList = new ArrayList<String>();
+	}
+
+	public static void tray() {
+		//checking for support
+		if( !SystemTray.isSupported() ) {
+			System.out.println("System tray is not supported !!! ");
+			return;
+		}
+		
+		SystemTray systemTray = SystemTray.getSystemTray();
+		Image image = Toolkit.getDefaultToolkit().getImage("res/white_wolf.png");
+
+		//popupmenu
+		PopupMenu trayPopupMenu = new PopupMenu();
+
+		MenuItem action = new MenuItem("Check for Updates...");
+		action.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Post.checkUpdates();
+				}
+		});     
+		trayPopupMenu.add(action);
+
+		MenuItem toggleWindow = new MenuItem("Toggle Window");
+		toggleWindow.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					WindowClient.window.frame.setVisible( !WindowClient.window.frame.isVisible() );           
+				}
+		});
+		trayPopupMenu.add(toggleWindow);
+
+		MenuItem close = new MenuItem("Close");
+		close.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+						System.exit(0);             
+				}
+		});
+		trayPopupMenu.add(close);
+
+		//setting tray icon
+		TrayIcon trayIcon = new TrayIcon(image, "UpDawg", trayPopupMenu);
+		//adjust to default size as per system recommendation 
+		trayIcon.setImageAutoSize(true);
+
+		try {
+			systemTray.add(trayIcon);
+		} catch(AWTException awtException) {
+			awtException.printStackTrace();
+		}
 	}
 }

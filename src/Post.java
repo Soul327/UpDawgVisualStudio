@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -15,6 +16,8 @@ public class Post {
 	final static String separator = "<com>";
 	final static String lineSeparator = "<br>";
 
+	static long lastUpdateTime = 0;
+
 	/**
 	 * Sends a post request to the server to update the given address by creating an array of the address and passing it to update(ArrayList<Address> addresses)
 	 * 
@@ -28,6 +31,40 @@ public class Post {
 		update( addresses );
 	}
 
+	public static void checkUpdates() {
+		// Prevent updates if running though visual studio code
+		if(Config.isVisualStudio()) return;
+
+		if(System.currentTimeMillis() - lastUpdateTime < Config.checkUpdateTime) return;
+
+		UpDawgLauncher.log("Checking for update");
+		lastUpdateTime = System.currentTimeMillis();
+
+		// Chop version string
+		String currentVersion = UpDawgLauncher.version.substring( UpDawgLauncher.version.lastIndexOf(" ") + 1 );
+		String downloadURL = "";
+
+		ArrayList<String> re = Post.post("https://everyoneandeverything.org/UpDawg/repo/info.php?q=latest", null);
+    for(String s: re) downloadURL = s;
+
+		String onlineVersion = downloadURL.substring( downloadURL.lastIndexOf("_") + 1, downloadURL.lastIndexOf(".") );
+
+		System.out.println("'"+currentVersion+"' '"+onlineVersion+"'");
+
+		if(!currentVersion.equals(onlineVersion)) {
+			File file = new File("local\\update.jar");
+			if( file.exists() ) {
+				UpDawgLauncher.log("Updating to " + onlineVersion);
+				Runtime rt = Runtime.getRuntime();
+				String command = "cmd /c cd \""+Config.programFolder.getAbsolutePath()+"\\local\" && java -jar update.jar";
+				try { rt.exec(command); } catch (IOException e) { e.printStackTrace(); }
+				System.exit(0);
+			} else {
+				UpDawgLauncher.log( file.getAbsoluteFile().getAbsolutePath() + " could not be found, please reinstall" );
+			}
+		}
+	}
+
 	/**
 	 * Sends a post request to the server to update the given addresses
 	 * 
@@ -36,8 +73,13 @@ public class Post {
 	 * @author Walter Ozmore
 	 */
 	public static void update(ArrayList<Address> addresses) {
+		if(!Config.sql_updateAddresses) return;
+
 		// Skip if there are no addresses
 		if(addresses == null || addresses.size() <= 0) return;
+
+		// Skip if there is not enough addresses
+		if( (addresses.size() < UpDawgLauncher.addresses.size()) && addresses.size() >= UpDawgLauncher.addresses.size() / 4.0 ) return;
 
 		UpDawgLauncher.log("Updating " + addresses.size() + " addresses");
 
@@ -48,10 +90,17 @@ public class Post {
 			
 			// if(address.time > 0) continue;
 
+
+			/* Create send map */
 			Map<String, String> map = new HashMap<String, String>();
 			map.put("uID", address.uid + "");
 			map.put("Stat", address.status + "");
 			map.put("UpdateTime", address.time + "");
+			map.put("key", Config.sql_key);
+
+			if(address.lastTemp > 0) map.put("temperature", address.lastTemp + "");
+			if(address.lastHumidity > 0) map.put("humidity", address.lastHumidity + "");
+
 			list.add(map);
 		}
 
@@ -59,7 +108,7 @@ public class Post {
 		String str = getSendStr(list);
 		if(str == null) return;
 
-		String link = "https://www.everyoneandeverything.org/UpDawg/res/Java/UpdateAddresses.php";
+		String link = "https://www.everyoneandeverything.org/UpDawg/res/ajax/update-addresses.php";
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("version", UpDawgLauncher.version);
 		args.put("q", str);
@@ -80,7 +129,7 @@ public class Post {
 
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("key", Config.sql_key);
-		String link = "https://www.everyoneandeverything.org/UpDawg/res/Ajax/GetAddresses.php";
+		String link = "https://www.everyoneandeverything.org/UpDawg/res/ajax/get-addresses.php";
 		ArrayList<String> postOutput = post(link, args);
 
 		// When there is no post output skip this function
@@ -93,6 +142,8 @@ public class Post {
 		for(int x=0;x<output.size();x++) {
 			Map<String, String> map = output.get(x);
 			Address address = new Address();
+			
+
 			if(map.containsKey("uID")) {
 				try {
 					address.uid = Integer.parseInt(map.get("uID"));
@@ -117,50 +168,8 @@ public class Post {
 			newAddresses.add( address );
 		}
 
+
 		UpDawgLauncher.addresses = newAddresses;
-	}
-	
-	/**
-	 * Get the data from a URL by sending data via post and returning the results
-	 * 
-	 * @param args Auguments to be sent as post data
-	 * @return arraylist<String> of the webpage
-	 * 
-	 * @author Walter Ozmore
-	 */
-	public static ArrayList<String> post(String link, Map<String, String> args) {
-		ArrayList<String> reList = new ArrayList<String>();
-		try {
-			// open a connection to the site
-			URL url = new URL(link);
-			URLConnection con = url.openConnection();
-			// activate the output
-			con.setDoOutput(true);
-			PrintStream ps = new PrintStream(con.getOutputStream());
-			// send your parameters to your site
-			String arg = "";
-			for (Map.Entry<String, String> entry : args.entrySet())
-				arg += entry.getKey() + "=" + entry.getValue() + "&";
-			if(arg.endsWith("&")) arg = arg.substring(0, arg.length() - 1); // Remove the last & from the string
-			if(arg.length() > 0) ps.print(arg); // Send parameters if there are any
-			ps.close(); // close the print stream
-			
-			// Read the webpage and close input
-			BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
-			String line;
-			while((line = in.readLine()) != null) {
-				reList.add( line );
-			}
-			in.close();
-			
-		} catch (MalformedURLException e) {
-			UpDawgLauncher.log(e.getMessage());
-			return null;
-		} catch (IOException e) {
-			UpDawgLauncher.log(e.getMessage());
-			return null;
-		}
-		return reList;
 	}
 
 	/**
@@ -211,5 +220,51 @@ public class Post {
 		// Remove last line break
 		sendString = sendString.substring(0, sendString.length() - lineSeparator.length());
 		return sendString;
+	}
+
+	/**
+	 * Get the data from a URL by sending data via post and returning the results
+	 * 
+	 * @param args Auguments to be sent as post data
+	 * @return arraylist<String> of the webpage
+	 * 
+	 * @author Walter Ozmore
+	 */
+	public static ArrayList<String> post(String link, Map<String, String> args) {
+		ArrayList<String> reList = new ArrayList<String>();
+		try {
+			// open a connection to the site
+			URL url = new URL(link);
+			URLConnection con = url.openConnection();
+			// activate the output
+			con.setDoOutput(true);
+			PrintStream ps = new PrintStream(con.getOutputStream());
+			// send your parameters to your site
+			if(args != null) {
+				String arg = "";
+				for (Map.Entry<String, String> entry : args.entrySet())
+					arg += entry.getKey() + "=" + entry.getValue() + "&";
+				if(arg.endsWith("&")) arg = arg.substring(0, arg.length() - 1); // Remove the last & from the string
+				if(arg.length() > 0) ps.print(arg); // Send parameters if there are any
+				ps.close(); // close the print stream
+			}
+			
+			// Read the webpage and close input
+			BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+			String line;
+			while((line = in.readLine()) != null) {
+				if(line != null && line.length() > 0)
+					reList.add( line );
+			}
+			in.close();
+			
+		} catch (MalformedURLException e) {
+			UpDawgLauncher.log(e.getMessage());
+			return null;
+		} catch (IOException e) {
+			UpDawgLauncher.log(e.getMessage());
+			return null;
+		}
+		return reList;
 	}
 }

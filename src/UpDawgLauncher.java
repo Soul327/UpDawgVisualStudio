@@ -1,5 +1,7 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
@@ -11,13 +13,18 @@ import Misc.SimpleWindow;
 
 public class UpDawgLauncher {
 	static boolean run = true;
-	public static String version = "Version 2.2.9";
+	public static String version = "Version 2.3.4";
 	public static SimpleWindow window;
 	
 	public static ArrayList<Address> addresses = new ArrayList<Address>();
 	public static ArrayList<Address> addressesToUpdate = new ArrayList<Address>();
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
+		if( !lockInstance("lock.dat") ) {
+			System.out.println("ALREADY RUNNING");
+			System.exit(0);
+		}
+
 		log("UpDawg " + version + "\n");
 		
 		// Grab config and update config file
@@ -28,7 +35,9 @@ public class UpDawgLauncher {
 		shutdownHook();
 		
 		// Run local window client
-		if(Config.localWindowClient) new WindowClient();
+		if(Config.localWindowClient)
+			new WindowClient();
+		WindowClient.tray();
 
 		// Start local java server for extra data
 		if(Config.ljs_enable) {
@@ -36,8 +45,7 @@ public class UpDawgLauncher {
 			ljs.start(); // Waits for connections
 		}
 
-		// run();
-		run_update();
+		moveUpdater();
 		while(run) tick();
 	}
 
@@ -69,12 +77,14 @@ public class UpDawgLauncher {
 		Post.getAddresses();
 
 		// Ping every address
-		for(int x=0;x<UpDawgLauncher.addresses.size();x++) {
-			Address address = UpDawgLauncher.addresses.get(x);
+		for(int x=0;x<addresses.size();x++) {
+			Address address = addresses.get(x);
 			address.ping();
-			if( !addressesToUpdate.contains(address)) addressesToUpdate.add(address);
-			// SDL.sleep(500);
+			if( !addressesToUpdate.contains(address))
+				addressesToUpdate.add(address);
 		}
+		Post.update( addresses );
+		Post.checkUpdates();
 	}
 	
 	/**
@@ -99,7 +109,7 @@ public class UpDawgLauncher {
 			do {
 				DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM-dd-YYYY");
 				String fileName = dtf.format( LocalDateTime.now() ) + " " + num + ".log";
-				Config.currentLogFile = new File("logs\\" + fileName);
+				Config.currentLogFile = new File("local\\logs\\" + fileName);
 				num++;
 			} while( Config.currentLogFile.exists() );
 			try {
@@ -127,5 +137,42 @@ public class UpDawgLauncher {
 				UpDawgLauncher.log("Shutting down");
 			}
 		}, "Shutdown-thread"));
+	}
+
+	static boolean lockInstance(final String lockFile) {
+    try {
+			final File file = new File(lockFile);
+			final RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+			final FileLock fileLock = randomAccessFile.getChannel().tryLock();
+
+			if (fileLock != null) {
+				Runtime.getRuntime().addShutdownHook(new Thread() {
+					public void run() {
+						try {
+							fileLock.release();
+							randomAccessFile.close();
+							file.delete();
+						} catch (Exception e) {
+							log("Unable to remove lock file: " + lockFile+"\n"+e.getMessage());
+						}
+					}
+				});
+				return true;
+			}
+    } catch (Exception e) {
+        log( e.getMessage() );
+    }
+    return false;
+	}
+
+	static void moveUpdater() {
+		File newUpdate = new File("update.jar");
+		if( !newUpdate.exists() ) return;
+
+		File oldUpdate = new File("local\\update.jar");
+		if( oldUpdate.exists() ) FileUtil.delete( oldUpdate );
+
+		newUpdate.renameTo( oldUpdate );
+		newUpdate.delete();
 	}
 }
